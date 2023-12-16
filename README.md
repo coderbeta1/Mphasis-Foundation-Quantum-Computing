@@ -10,7 +10,7 @@ Files Description
 
 Python Scripts
     * classical_re-assignment_greedy.py ##
-    * find_impacted_passengers: Identifies passengers affected by flight changes. ##
+    * find_impacted_passengers: Identifies passengers affected by flight changes.    
     * calc_score: Calculates scores for reassignment options.
     * find_possible_paths: Determines potential paths for reassignment.
     * main: The main function orchestrating the process.
