@@ -1,4 +1,5 @@
 from pnr_reaccomodation import *
+from dimod import BINARY
 from docplex.mp.model import Model
 from qiskit_optimization.translators import from_docplex_mp
 import numpy as np
@@ -7,75 +8,6 @@ import pandas as pd
 from datetime import timedelta
 from nearby_airport_search import haversine
 from path_scoring import *
-
-scoring_criteria_Flights = {"Arr_LT_6hrs": 70,
-                            "Arr_LT_12hrs": 50,
-                            "Arr_LT_24hrs": 40,
-                            "Arr_LT_48hrs": 30,
-                            "Equipment": 50,
-                            "Same_Citipairs": 40,
-                            "DiffSame_Citipairs": 30,
-                            "Different_Citipairs": 20,
-                            "SPF_LT_6hrs": 70,
-                            "SPF_LT_12hrs": 50,
-                            "SPF_LT_24hrs": 40,
-                            "SPF_LT_48hrs": 30,
-                            "IsStopover": -20,
-                            "A_Grade": 200,
-                            "B_Grade": 180,
-                            "C_Grade": 150,
-                            "D_Grade": 150,
-                            }
-scoring_criteria_Flights_toggle = {"Arr_LT_6hrs": 1,
-                                "Arr_LT_12hrs": 1,
-                                "Arr_LT_24hrs": 1,
-                                "Arr_LT_48hrs": 1,
-                                "Equipment": 1,
-                                "Same_Citipairs": 1,
-                                "DiffSame_Citipairs": 1,
-                                "Different_Citipairs": 1,
-                                "SPF_LT_6hrs": 1,
-                                "SPF_LT_12hrs": 1,
-                                "SPF_LT_24hrs": 1,
-                                "SPF_LT_48hrs": 1,
-                                "IsStopover": 1,
-                                "A_Grade": 1,
-                                "B_Grade": 1,
-                                "C_Grade": 1,
-                                "D_Grade": 1,
-                                }
-
-scoring_criteria_PNRs = {"SSR": 200,
-                        "Per_Pax": 50,
-                        "Loyalty_Silver": 1500,
-                        "Loyalty_Gold": 1600,
-                        "Loyalty_Platinum": 1800,
-                        "Loyalty_PPlatinum": 2000,
-                        "Booking_Group": 500,
-                        "Paid_Service": 200,
-                        "Downline_Connection": 100,
-                        "EconomyClass": 1500,
-                        "BusinessClass": 1850,
-                        "PremiumEconomyClass": 1650,
-                        "FirstClass": 2000,
-                        }
-scoring_criteria_PNRs_toggle = { "SSR": 1,
-                                "Per_Pax": 1,
-                                "Loyalty_Silver": 1,
-                                "Loyalty_Gold": 1,
-                                "Loyalty_Platinum": 1,
-                                "Loyalty_PPlatinum": 1,
-                                "Booking_Group": 1,
-                                "Paid_Service": 1,
-                                "Downline_Connection": 1,
-                                "EconomyClass": 1,
-                                "BusinessClass": 1,
-                                "PremiumEconomyClass": 1,
-                                "FirstClass": 1,
-                                "Downgrade_allow": 1,
-                                "Upgrade_allow": 1,
-                                }
-
 
 def next_72hrsflights(flight_number, canceled_departure_datetime, sorted_dataframe):
     canceled_flight_index = sorted_dataframe[
@@ -242,7 +174,7 @@ def decode(variable, unique_airports, flight_numbers, departure_time, df):
 
     return sol
 
-def main(*disruptions, INVENTORY_FILE="INV-ZZ-20231208_041852.csv", AIRPORT_FILE='GlobalAirportDatabase.csv', PNR_FILE = "PNRB-ZZ-20231208_062017.csv", PASSENGER_LIST = "PNRP-ZZ-20231208_111136.csv"):
+def main(*disruptions, INVENTORY_FILE="INV-ZZ-20231208_041852.csv", AIRPORT_FILE='GlobalAirportDatabase.csv', PNR_FILE = "PNRB-ZZ-20231208_062017.csv", PASSENGER_LIST = "PNRP-ZZ-20231208_111136.csv", TOKEN = 'DEV-6ddf205adb6761bc0018a65f2496245457fe977f'):
     inventory_dataframe=pd.read_csv(INVENTORY_FILE)
 
     for disrupt in disruptions:
@@ -668,7 +600,7 @@ def main(*disruptions, INVENTORY_FILE="INV-ZZ-20231208_041852.csv", AIRPORT_FILE
 
         if total_flight_after_reduction > 0:
         # Initialize the Leap Hybrid CQM Sampler
-            sampler = LeapHybridCQMSampler(token='DEV-6ddf205adb6761bc0018a65f2496245457fe977f')
+            sampler = LeapHybridCQMSampler(token=TOKEN)
 
             try:
             # Solve the CQM using the Leap Hybrid CQM Sampler
@@ -745,7 +677,7 @@ def main(*disruptions, INVENTORY_FILE="INV-ZZ-20231208_041852.csv", AIRPORT_FILE
 
         src=cancelled_flight_departure_airport
         dest=cancelled_flight_arrival_airport
-        sampleset = reaccomodation(PNR, paths, scores, alpha, src, dest, Passengers_flight_ungrouped, disrupt)
+        sampleset = reaccomodation(PNR, paths, scores, alpha, src, dest, Passengers_flight_ungrouped, disrupt, TOKEN)
 
         if sampleset is not None:
             df1 = pd.read_csv(f"Default_solution_{disrupt}.csv")

@@ -1,4 +1,4 @@
-from dimod import ConstrainedQuadraticModel, BinaryQuadraticModel, BINARY, QuadraticModel
+from dimod import ConstrainedQuadraticModel, BinaryQuadraticModel, QuadraticModel
 from dwave.system import LeapHybridCQMSampler
 import numpy as np
 import pandas as pd
@@ -192,7 +192,7 @@ def parse_solution(sampleset, passenger_flights, disrupt):
 
     removed_df.to_csv(f"Default_solution_{disrupt}.csv")
     
-    absent = passenger_flights[~passenger_flights['RECLOC'].isin(df['PNR ID'])][['RECLOC']]
+    absent = passenger_flights[~passenger_flights['RECLOC'].isin(df['PNR ID'])][['RECLOC']].drop_duplicates(subset='RECLOC')
     
     absent.rename(columns={'RECLOC': 'PNR ID'}, inplace=True)
     filtered_df = pd.concat([filtered_df, absent], ignore_index=True)
@@ -202,10 +202,10 @@ def parse_solution(sampleset, passenger_flights, disrupt):
     return feasible_sampleset
 
 #FUNCTION TO SOLVE THE KNAPSACK PROBLEM AND GIVE AN OUTPUT AS CSV FILES
-def reaccomodation(PNR, paths, reward, alpha, src, dest, passenger_flights, disrupt):
+def reaccomodation(PNR, paths, reward, alpha, src, dest, passenger_flights, disrupt, TOKEN):
     """Solve a knapsack problem using a CQM solver."""
 
-    sampler = LeapHybridCQMSampler(token='DEV-6ddf205adb6761bc0018a65f2496245457fe977f')
+    sampler = LeapHybridCQMSampler(token=TOKEN)
 
     cqm = build_knapsack_cqm(PNR, paths, reward, alpha, src, dest)
     

@@ -1,7 +1,7 @@
 from pnr_reaccomodation import *
 from classical_pathfinding import * 
 
-def main(*disruptions, INVENTORY_FILE="INV-ZZ-20231208_041852.csv", PNR_FILE = "PNRB-ZZ-20231208_062017.csv", PASSENGER_LIST = "PNRP-ZZ-20231208_111136.csv"):
+def main(*disruptions, INVENTORY_FILE="INV-ZZ-20231208_041852.csv", PNR_FILE = "PNRB-ZZ-20231208_062017.csv", PASSENGER_LIST = "PNRP-ZZ-20231208_111136.csv", TOKEN = 'DEV-6ddf205adb6761bc0018a65f2496245457fe977f'):
     flight_network = pd.read_csv(INVENTORY_FILE)
     PNR_list = pd.read_csv(PNR_FILE)
     passenger_details = pd.read_csv(PASSENGER_LIST)
@@ -35,7 +35,7 @@ def main(*disruptions, INVENTORY_FILE="INV-ZZ-20231208_041852.csv", PNR_FILE = "
             for j in range(len(paths[i])):
                 paths[i][j] = Flight(flight_network[flight_network["InventoryId"]==paths[i][j]][['FC_AvailableInventory', 'BC_AvailableInventory', 'PC_AvailableInventory', 'EC_AvailableInventory']], paths[i][j], flight_network[flight_network["InventoryId"]==paths[i][j]]['DepartureAirport'].iloc[0], flight_network[flight_network["InventoryId"]==paths[i][j]]['ArrivalAirport'].iloc[0])
         
-        sampleset = reaccomodation(PNR, paths, scores, alpha, sources[disrupt], destinations[disrupt], impacted_pax[disrupt], disrupt)
+        sampleset =  reaccomodation(PNR, paths, scores, alpha, sources[disrupt], destinations[disrupt], impacted_pax[disrupt], disrupt, TOKEN)
         
 if __name__ == '__main__':
     main("INV-ZZ-3174758")
