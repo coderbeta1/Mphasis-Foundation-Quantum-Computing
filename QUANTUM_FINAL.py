@@ -628,6 +628,7 @@ def main(*disruptions, INVENTORY_FILE="INV-ZZ-20231208_041852.csv", AIRPORT_FILE
                 else:
                 #HERE WE NEED TO
                     print("NO FEASIBLE SOLUTIONS")
+                    continue
 
             except Exception as e:
                 print("An error occurred while solving the CQM:", e)
@@ -679,35 +680,37 @@ def main(*disruptions, INVENTORY_FILE="INV-ZZ-20231208_041852.csv", AIRPORT_FILE
         dest=cancelled_flight_arrival_airport
         sampleset = reaccomodation(PNR, paths, scores, alpha, src, dest, Passengers_flight_ungrouped, disrupt, TOKEN)
 
-        if sampleset is not None:
+        if sampleset is not None and sampleset.first.energy<0:
             df1 = pd.read_csv(f"Default_solution_{disrupt}.csv")
             df2 = pd.read_csv(f"Exception_list_{disrupt}.csv")
 
             for i in range(len(df1)):
                 flight_id = df1["Flight ID"][i]
+                PNR_ID = df1["PNR ID"][i]
                 inventory_id_condition = inventory_dataframe["InventoryId"] == flight_id
 
                 if flight_id == 'BC':
-                    inventory_dataframe.loc[inventory_id_condition, "BC_AvailableInventory"] -= 1
+                    inventory_dataframe.loc[inventory_id_condition, "BC_AvailableInventory"] -= PNRs['PAX_CNT'].loc[PNR_ID]
                 elif flight_id == 'FC':
-                    inventory_dataframe.loc[inventory_id_condition, "FC_AvailableInventory"] -= 1
+                    inventory_dataframe.loc[inventory_id_condition, "FC_AvailableInventory"] -= PNRs['PAX_CNT'].loc[PNR_ID]
                 elif flight_id == 'PC':
-                    inventory_dataframe.loc[inventory_id_condition, "PC_AvailableInventory"] -= 1
+                    inventory_dataframe.loc[inventory_id_condition, "PC_AvailableInventory"] -= PNRs['PAX_CNT'].loc[PNR_ID]
                 else:
-                    inventory_dataframe.loc[inventory_id_condition, "EC_AvailableInventory"] -= 1
+                    inventory_dataframe.loc[inventory_id_condition, "EC_AvailableInventory"] -= PNRs['PAX_CNT'].loc[PNR_ID]
 
             for i in range(len(df2)):
                 flight_id = df2["Flight ID"][i]  
+                PNR_ID = df1["PNR ID"][i]
                 inventory_id_condition = inventory_dataframe["InventoryId"] == flight_id
 
                 if flight_id == 'BC':
-                    inventory_dataframe.loc[inventory_id_condition, "BC_AvailableInventory"] -= 1
+                    inventory_dataframe.loc[inventory_id_condition, "BC_AvailableInventory"] -= PNRs['PAX_CNT'].loc[PNR_ID]
                 elif flight_id == 'FC':
-                    inventory_dataframe.loc[inventory_id_condition, "FC_AvailableInventory"] -= 1
+                    inventory_dataframe.loc[inventory_id_condition, "FC_AvailableInventory"] -= PNRs['PAX_CNT'].loc[PNR_ID]
                 elif flight_id == 'PC':
-                    inventory_dataframe.loc[inventory_id_condition, "PC_AvailableInventory"] -= 1
+                    inventory_dataframe.loc[inventory_id_condition, "PC_AvailableInventory"] -= PNRs['PAX_CNT'].loc[PNR_ID]
                 else:
-                    inventory_dataframe.loc[inventory_id_condition, "EC_AvailableInventory"] -= 1
+                    inventory_dataframe.loc[inventory_id_condition, "EC_AvailableInventory"] -= PNRs['PAX_CNT'].loc[PNR_ID]
 
 if __name__ == '__main__':
-    main("INV-ZZ-3174758")
+    main("INV-ZZ-6584575")
