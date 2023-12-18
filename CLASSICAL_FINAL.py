@@ -99,4 +99,4 @@ def main(*disruptions_all, INVENTORY_FILE="INV-ZZ-20231208_041852.csv", PNR_FILE
                         
         
 if __name__ == '__main__':
-    main("INV-ZZ-5202636", TOKEN='DEV-12b7e5b3bee7351638023f6bf954329397740cbe')
+    main("INV-ZZ-3174758", TOKEN='DEV-12b7e5b3bee7351638023f6bf954329397740cbe')
