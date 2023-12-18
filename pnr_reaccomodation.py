@@ -246,7 +246,7 @@ def parse_solution(sampleset, passenger_flights, disrupt, abs_alpha, scores, pat
                 n = len(i[0]['PNR ID'].unique())
         
         if len(subframes) > 1:  #If still equal check path score
-            subframes = [max(subframes, key = lambda x: abs_alpha[x[0]['Path']])]
+            subframes = [max(subframes, key = lambda x: abs_alpha[x[0]['Path'].iloc[0]])]
         
         dataframes = subframes  #Most aprropriate solution
     
