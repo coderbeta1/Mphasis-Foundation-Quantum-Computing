@@ -169,70 +169,25 @@ class impacted_PNR:
         
         return bossman
 
-scoring_criteria_PNRs = {"SSR": 200,
-                        "Per_Pax": 50,
-                        "Loyalty_Silver": 1500,
-                        "Loyalty_Gold": 1600,
-                        "Loyalty_Platinum": 1800,
-                        "Loyalty_PPlatinum": 2000,
-                        "Booking_Group": 500,
-                        "Paid_Service": 200,
-                        "Downline_Connection": 100,
-                        "EconomyClass": 1500,
-                        "BusinessClass": 1850,
-                        "PremiumEconomyClass": 1650,
-                        "FirstClass": 2000,
-                        }
-scoring_criteria_PNRs_toggle = { "SSR": 1,
-                                "Per_Pax": 1,
-                                "Loyalty_Silver": 1,
-                                "Loyalty_Gold": 1,
-                                "Loyalty_Platinum": 1,
-                                "Loyalty_PPlatinum": 1,
-                                "Booking_Group": 1,
-                                "Paid_Service": 1,
-                                "Downline_Connection": 1,
-                                "EconomyClass": 1,
-                                "BusinessClass": 1,
-                                "PremiumEconomyClass": 1,
-                                "FirstClass": 1,
-                                "Downgrade_allow": 1,
-                                "Upgrade_allow": 1,
-                                }
+def csv_reader_buss(noel):
+    scoring = {}
+    scoring_toggle = {}
+    for i in range(len(noel)):
+        current = noel.iloc[i,:]
+        scoring[current['Business Rules']] = current['Score']
+        scoring_toggle[current['Business Rules']] = current['On/Off']
+    return scoring, scoring_toggle
 
-scoring_criteria_Flights = {"Arr_LT_6hrs": 70,
-                            "Arr_LT_12hrs": 50,
-                            "Arr_LT_24hrs": 40,
-                            "Arr_LT_48hrs": 30,
-                            "Equipment": 50,
-                            "Same_Citipairs": 40,
-                            "DiffSame_Citipairs": 30,
-                            "Different_Citipairs": 20,
-                            "SPF_LT_6hrs": 70,
-                            "SPF_LT_12hrs": 50,
-                            "SPF_LT_24hrs": 40,
-                            "SPF_LT_48hrs": 30,
-                            "IsStopover": -20,
-                            "A_Grade": 200,
-                            "B_Grade": 180,
-                            "C_Grade": 150,
-                            "D_Grade": 150,
-                            }
-scoring_criteria_Flights_toggle = {"Arr_LT_6hrs": 1,
-                                "Arr_LT_12hrs": 1,
-                                "Arr_LT_24hrs": 1,
-                                "Arr_LT_48hrs": 1,
-                                "Equipment": 1,
-                                "Same_Citipairs": 1,
-                                "DiffSame_Citipairs": 1,
-                                "Different_Citipairs": 1,
-                                "SPF_LT_6hrs": 1,
-                                "SPF_LT_12hrs": 1,
-                                "SPF_LT_24hrs": 1,
-                                "SPF_LT_48hrs": 1,
-                                "IsStopover": 1,
-                                "A_Grade": 1,
-                                "B_Grade": 1,
-                                "C_Grade": 1,
-                                "D_Grade": 1,
-                                }
+def csv_reader_plane(noel):
+    scoring = {}
+    scoring_toggle = {}
+    for i in range(len(noel)):
+        current = noel.iloc[i,:]
+        scoring[current['Flight Rules']] = current['Score']
+        scoring_toggle[current['Flight Rules']] = current['On/Off']
+    return scoring, scoring_toggle
+
+scoring_criteria_PNRs, scoring_criteria_PNRs_toggle = csv_reader_buss(pd.read_csv("Business_Rules_PNR.csv"))
+
+scoring_criteria_Flights, scoring_criteria_Flights_toggle = csv_reader_plane(pd.read_csv("Flight_Scoring.csv"))
+

@@ -713,4 +713,4 @@ def main(*disruptions, INVENTORY_FILE="INV-ZZ-20231208_041852.csv", AIRPORT_FILE
                     inventory_dataframe.loc[inventory_id_condition, "EC_AvailableInventory"] -= PNRs['PAX_CNT'].loc[PNR_ID]
 
 if __name__ == '__main__':
-    main("INV-ZZ-6584575")
+    main("INV-ZZ-6584575", TOKEN='DEV-12b7e5b3bee7351638023f6bf954329397740cbe')

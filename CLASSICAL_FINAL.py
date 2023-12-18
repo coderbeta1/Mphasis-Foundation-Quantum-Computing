@@ -38,7 +38,7 @@ def main(*disruptions_all, INVENTORY_FILE="INV-ZZ-20231208_041852.csv", PNR_FILE
     for disruptions in disruptions_all:
         # Create Object and run solve function
         solver = pathfind_recursion(flight_network, disruptions, scoring_criteria= scoring_criteria_Flights, toggle = scoring_criteria_Flights_toggle, verbose= 0, stopovers= 2)
-        solutions, alphas, sources, destinations = solver.solve()
+        solutions, alphas, sources, destinations, _ = solver.solve()
         
         # Create Object and run solve function for PNRs
         PNR_list = impacted_PNR(scoring_criteria_PNRs, PNR_list, passenger_details, scoring_criteria_PNRs_toggle, flight_network, disruptions)
@@ -99,4 +99,4 @@ def main(*disruptions_all, INVENTORY_FILE="INV-ZZ-20231208_041852.csv", PNR_FILE
                         
         
 if __name__ == '__main__':
-    main("INV-ZZ-5202636")
+    main("INV-ZZ-5202636", TOKEN='DEV-12b7e5b3bee7351638023f6bf954329397740cbe')

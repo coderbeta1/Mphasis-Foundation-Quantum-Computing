@@ -20,6 +20,34 @@ class pathfind_recursion:
         self.flight_network = self.flight_network.reset_index().iloc[:,1:]
         return
     
+    def check_time_diff(self):
+        current_net = self.flight_network[self.flight_network['InventoryId'].isin(self.disrupted_flights)].copy()
+        current_net.sort_values(by="DepartureDateTime", inplace=True)
+
+        final = []
+        while True:
+            if len(current_net) == 0: break
+            if len(current_net) == 1: 
+                final.append([current_net.iloc[0,:]['InventoryId']]) 
+                break
+            current_batch = []
+            lost_batch = []
+            prev_row = current_net.iloc[0,:]
+            for i in range(1, len(current_net)):
+                current_row = current_net.iloc[i,:]
+                curr_time_diff = (datetime.strptime(current_row['DepartureDateTime'], "%Y-%m-%d %H:%M:%S") - datetime.strptime(prev_row['DepartureDateTime'], "%Y-%m-%d %H:%M:%S")).total_seconds()/3600
+                if curr_time_diff>72:
+                    if len(current_batch) == 0:
+                        current_batch.append(prev_row['InventoryId']) 
+                    current_batch.append(current_row['InventoryId'])
+                    prev_row = current_net.iloc[i,:]
+                else:
+                    lost_batch.append(current_row['InventoryId'])
+            current_net = current_net[current_net['InventoryId'].isin(lost_batch)]
+            if len(current_batch)>=1:final.append(current_batch)
+            
+        return final
+
     def statistics_printer(self, disrupted_flight_data = {}, flights = 0):
         print("\nSIMULATION STATISTICS: \n")
         print("Number of Unique Airports Count: ", len(self.flight_network.groupby("DepartureAirport")))
@@ -50,7 +78,7 @@ class pathfind_recursion:
 
     def calc_score(self, path_detailed, disrupted_flight_data):
         score = 0
-        arrival_delay = (datetime.strptime(path_detailed[-1]['ArrivalDateTime'], "%Y-%m-%d %H:%M:%S") - datetime.strptime(disrupted_flight_data['ArrivalDateTime'], "%Y-%m-%d %H:%M:%S")).total_seconds()/3600
+        arrival_delay = (datetime.strptime(path_detailed[-1]['DepartureDateTime'], "%Y-%m-%d %H:%M:%S") - datetime.strptime(disrupted_flight_data['ArrivalDateTime'], "%Y-%m-%d %H:%M:%S")).total_seconds()/3600
         if arrival_delay < 6 and self.toggle['Arr_LT_6hrs']:
             score += self.scoring_criteria['Arr_LT_6hrs']
         elif arrival_delay < 12 and self.toggle['Arr_LT_12hrs']:
@@ -158,9 +186,11 @@ class pathfind_recursion:
                 alphas.append(i[-1])
                 final.append(i)
 
-        div_value = max(alphas)
-        alphas = [alphas[x]/(div_value * ((len(solutions[x])-1) ** 2)) for x in range(len(alphas))]
-
+        if len(alphas) != 0:
+            div_value = max(alphas)
+            alphas = [alphas[x]/(div_value * ((len(solutions[x])-1) ** 2)) for x in range(len(alphas))]
+        else:
+            alphas = []
         self.all_destinations = true_destinations
 
         end_time = time.perf_counter()
@@ -169,19 +199,24 @@ class pathfind_recursion:
         return final, alphas, [source], self.all_destinations
 
     def multisolve(self):
+        starter = time.perf_counter()
         solution = {}
         alphas = {}
         sources = {}
         destinations = {}
         for disruption in self.disrupted_flights:
             solution[disruption], alphas[disruption], sources[disruption], destinations[disruption] = self.solver(disruption)
-        return solution, alphas, sources, destinations
+        stopper = time.perf_counter()
+            
+        return solution, alphas, sources, destinations, stopper - starter
     
     def solve(self):
+        starter = time.perf_counter()
         if self.verbose: self.statistics_printer()
         if(len(self.disrupted_flights) == 1):
             a, b, c, d = self.solver(self.disrupted_flights[0])
-            return {str(self.disrupted_flights[0]): a}, {str(self.disrupted_flights[0]): b}, {str(self.disrupted_flights[0]): c}, {str(self.disrupted_flights[0]): d}
+            stopper = time.perf_counter()
+            return {str(self.disrupted_flights[0]): a}, {str(self.disrupted_flights[0]): b}, {str(self.disrupted_flights[0]): c}, {str(self.disrupted_flights[0]): d}, stopper - starter
         else:
             return self.multisolve()
 
@@ -205,6 +240,8 @@ class impacted_PNR:
         dep_date = dep_date.strftime("%#m/%#d/%#Y %#H:%M")
         PNR_list = PNR_list[PNR_list['DEP_DTML'] == dep_date]
         detailed_PNR = self.PNR_list[self.PNR_list['RECLOC'].isin(list(PNR_list['RECLOC']))]
+        detailed_PNR = detailed_PNR[[datetime.strptime(detailed_PNR.iloc[i,:]['DEP_DTML'], "%m/%d/%Y %H:%M") >= datetime.strptime(dep_date, "%m/%d/%Y %H:%M") for i in range(len(detailed_PNR))]]
+        detailed_PNR = detailed_PNR.groupby('RECLOC')
 
         passenger_details = passenger_details.groupby('RECLOC')
         passenger_affected = passenger_details.get_group(PNR_list.iloc[0,:]['RECLOC']).copy()
@@ -213,7 +250,7 @@ class impacted_PNR:
         booking_class = current_PNR['COS_CD']
         passenger_affected['COS_CD'] = [booking_class] * len(passenger_affected)
         passenger_affected['PAX_CNT'] = [pax] * len(passenger_affected)
-        score = self.calc_score(passenger_affected, current_PNR)
+        score = self.calc_score(passenger_affected, current_PNR, detailed_PNR)
         passenger_affected["Scores"] = [max(score)] * len(score)    
 
         for i in range(1,len(PNR_list)):
@@ -223,7 +260,7 @@ class impacted_PNR:
             booking_class = current_PNR['COS_CD']
             passengers['COS_CD'] = [booking_class] * len(passengers)
             passengers['PAX_CNT'] = [pax] * len(passengers)
-            score = self.calc_score(passengers, current_PNR)
+            score = self.calc_score(passengers, current_PNR, detailed_PNR)
             passengers["Scores"] = [max(score)] * len(score)
 
             passenger_affected = pd.concat([passenger_affected, passengers])
@@ -233,7 +270,23 @@ class impacted_PNR:
 
         return passenger_affected
     
-    def calc_score(self, passengers, PNR):
+    def check_downline(self, pnr_bookings):
+        if len(pnr_bookings) == 1:
+            return 0
+
+        counter = 0
+        current_datetime = datetime.strptime(pnr_bookings.iloc[0,:]['DEP_DTML'], "%m/%d/%Y %H:%M")
+        for i in range(1, len(pnr_bookings)):
+            dasc = datetime.strptime(pnr_bookings.iloc[i,:]['DEP_DTML'], "%m/%d/%Y %H:%M")
+            if dasc < current_datetime + timedelta(hours=72) :
+                counter += 1
+            else:
+                break
+            current_datetime = dasc
+
+        return counter
+
+    def calc_score(self, passengers, PNR, detailed_PNR):
         scores = []
         for i in range(len(passengers)):
             current_score = 0
@@ -249,7 +302,8 @@ class impacted_PNR:
             if self.toggle['BusinessClass'] and PNR['COS_CD'] == 'BusinessClass': current_score += (self.scoring_criteria[PNR['COS_CD']])
             if self.toggle['PremiumEconomyClass'] and PNR['COS_CD'] == 'PremiumEconomyClass': current_score += (self.scoring_criteria[PNR['COS_CD']])
             if self.toggle['FirstClass'] and PNR['COS_CD'] == 'FirstClass': current_score += (self.scoring_criteria[PNR['COS_CD']])
-            
+            if self.toggle['Downline_Connection']: current_score += self.scoring_criteria['Downline_Connection'] * self.check_downline(detailed_PNR.get_group(PNR['RECLOC']))
+
             scores.append(current_score)
         return scores
     
@@ -311,80 +365,33 @@ class impacted_PNR:
         
         return bossman
 
+def csv_reader_buss(noel):
+    scoring = {}
+    scoring_toggle = {}
+    for i in range(len(noel)):
+        current = noel.iloc[i,:]
+        scoring[current['Business Rules']] = current['Score']
+        scoring_toggle[current['Business Rules']] = current['On/Off']
+    return scoring, scoring_toggle
+
+def csv_reader_plane(noel):
+    scoring = {}
+    scoring_toggle = {}
+    for i in range(len(noel)):
+        current = noel.iloc[i,:]
+        scoring[current['Flight Rules']] = current['Score']
+        scoring_toggle[current['Flight Rules']] = current['On/Off']
+    return scoring, scoring_toggle
+
 # # Read Input Flight Data
 # flight_network = pd.read_csv("INV-ZZ-20231208_041852.csv")
 # PNR_list = pd.read_csv("PNRB-ZZ-20231208_062017.csv")
 # passenger_details = pd.read_csv("PNRP-ZZ-20231208_111136.csv")
 # disruption = ["INV-ZZ-2774494"]
 
-scoring_criteria_PNRs = {"SSR": 200,
-                        "Per_Pax": 50,
-                        "Loyalty_Silver": 1500,
-                        "Loyalty_Gold": 1600,
-                        "Loyalty_Platinum": 1800,
-                        "Loyalty_PPlatinum": 2000,
-                        "Booking_Group": 500,
-                        "Paid_Service": 200,
-                        "Downline_Connection": 100,
-                        "EconomyClass": 1500,
-                        "BusinessClass": 1850,
-                        "PremiumEconomyClass": 1650,
-                        "FirstClass": 2000,
-                        }
-scoring_criteria_PNRs_toggle = { "SSR": 1,
-                                "Per_Pax": 1,
-                                "Loyalty_Silver": 1,
-                                "Loyalty_Gold": 1,
-                                "Loyalty_Platinum": 1,
-                                "Loyalty_PPlatinum": 1,
-                                "Booking_Group": 1,
-                                "Paid_Service": 1,
-                                "Downline_Connection": 1,
-                                "EconomyClass": 1,
-                                "BusinessClass": 1,
-                                "PremiumEconomyClass": 1,
-                                "FirstClass": 1,
-                                "Downgrade_allow": 1,
-                                "Upgrade_allow": 1,
-                                }
+scoring_criteria_PNRs, scoring_criteria_PNRs_toggle = csv_reader_buss(pd.read_csv("Business_Rules_PNR.csv"))
 
-scoring_criteria_Flights = {"Arr_LT_6hrs": 70,
-                            "Arr_LT_12hrs": 50,
-                            "Arr_LT_24hrs": 40,
-                            "Arr_LT_48hrs": 30,
-                            "Equipment": 50,
-                            "Same_Citipairs": 40,
-                            "DiffSame_Citipairs": 30,
-                            "Different_Citipairs": 20,
-                            "SPF_LT_6hrs": 70,
-                            "SPF_LT_12hrs": 50,
-                            "SPF_LT_24hrs": 40,
-                            "SPF_LT_48hrs": 30,
-                            "IsStopover": -20,
-                            "A_Grade": 200,
-                            "B_Grade": 180,
-                            "C_Grade": 150,
-                            "D_Grade": 150,
-                            }
-scoring_criteria_Flights_toggle = {"Arr_LT_6hrs": 1,
-                                "Arr_LT_12hrs": 1,
-                                "Arr_LT_24hrs": 1,
-                                "Arr_LT_48hrs": 1,
-                                "Equipment": 1,
-                                "Same_Citipairs": 1,
-                                "DiffSame_Citipairs": 1,
-                                "Different_Citipairs": 1,
-                                "SPF_LT_6hrs": 1,
-                                "SPF_LT_12hrs": 1,
-                                "SPF_LT_24hrs": 1,
-                                "SPF_LT_48hrs": 1,
-                                "IsStopover": 1,
-                                "A_Grade": 1,
-                                "B_Grade": 1,
-                                "C_Grade": 1,
-                                "D_Grade": 1,
-                                }
-
+scoring_criteria_Flights, scoring_criteria_Flights_toggle = csv_reader_plane(pd.read_csv("Flight_Scoring.csv"))
 # # Create Object and run solve function
 # solver = pathfind_recursion(flight_network, disruption, scoring_criteria= scoring_criteria_Flights, toggle = scoring_criteria_Flights_toggle, verbose= 0, stopovers= 2)
 # solutions, alphas, sources, destinations = solver.solve()
