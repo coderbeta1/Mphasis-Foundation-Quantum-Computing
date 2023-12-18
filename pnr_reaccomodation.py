@@ -152,8 +152,8 @@ def build_knapsack_cqm(PNR, paths, reward, alpha, src, dest):
     return cqm
 
 # FUNCTION TO PARSE THE SOLUTION OF PASSENGER REACCOMODATION AND STORING RESULTS IN CSV FILE
-def parse_solution(sampleset, passenger_flights, disrupt):
-    """Translate the best sample returned from solver to shipped items.
+def parse_solution(sampleset, passenger_flights, disrupt, abs_alpha, scores, paths):
+    """Translate the sampler sample returned from solver to shipped items.
 
     Args:
         sampleset (dimod.Sampleset):
@@ -165,40 +165,99 @@ def parse_solution(sampleset, passenger_flights, disrupt):
         print("No feasible solution found")
         return None
 
-    arr = list()
-    best = feasible_sampleset.first
-    
-    nos = 0
-    for i in best.sample:
-        if best.sample[i] == 1:
-            arr.append(i)
-            nos += 1
+    # Find the minimum energy
+    min_energy = min(sampleset.data_vectors['energy'])
+
+    # Collect all samples with the minimum energy
+    min_energy_samples = [sample for sample, energy in zip(sampleset.samples(), sampleset.data_vectors['energy']) if energy == min_energy]
+
+    #Converting normalised alpha to abs_alpha
+    for i in range(len(abs_alpha)):
+        abs_alpha[i] = abs_alpha[i] * (len(paths[i])**2)
+
+    dataframes = []
+    for sampler in min_energy_samples:  #Sampling samples with same energy
+        arr = list()
+        
+        nos = 0
+        for i in sampler:
+            if sampler[i] == 1:
+                arr.append(i)
+                nos += 1
+                
+        if nos==0:
+            continue
+        
+        df = pd.DataFrame(arr)
+        
+        df.rename(columns={0: 'Path', 1: 'Flight ID', 2: 'PNR ID', 3: 'Class'}, inplace=True)
+            # Find the most frequent value(s)
+        most_frequent_values = df['Path'].mode()
             
-    if nos==0:
-        print("No reaccomodation available ")
-        return None
-    
-    df = pd.DataFrame(arr)
-    
-    df.rename(columns={0: 'Path', 1: 'Flight ID', 2: 'PNR ID', 3: 'Class'}, inplace=True)
-        # Find the most frequent value(s)
-    most_frequent_values = df['Path'].mode()
+            # Getting all the unique paths
+        unique_paths = most_frequent_values.unique()
+        max_paths = [unique_paths[0]]  #Path with the highest score
+        mpth_score = abs_alpha[unique_paths[0]] #Paths with the highest scores
+        
+        if len(unique_paths) > 1:
+            for path in unique_paths[1:]:
+                    if abs_alpha[path] > mpth_score: #Paths with higher score replace all low scores path
+                        mpth_score = abs_alpha[path]
+                        max_paths = [path]
+                    elif abs_alpha[path] == mpth_score: #Paths with equal score are appended
+                        max_paths.append(path)
+        
+        if len(max_paths) > 1: #If still there are more than one unqiue paths check PNRs
+            selecter = []    
+            for path in max_paths:
+                check_df = df[df['Path'] == path]
+                n = len(paths[path])  #Checking path length
+                rank = 0
+                for pnr in range(len(check_df)):  #Adding PNR scores together
+                    rank += scores[check_df.iloc[pnr]['PNR_ID']][check_df.iloc[pnr]['Class']]
+                rank /= n 
+                selecter.append([path, rank])
+            max_paths = [max(selecter, key = lambda x: x[1])[0]]  #Selecting the maximum ranked path
+            
+        most_frequent_values = df[df['Path'] == max_paths[0]]['Path']   
+         
+        # Filter DataFrame to remove rows with the most frequent values
+        filtered_df = df[~df['Path'].isin(most_frequent_values)]
 
-    # Filter DataFrame to remove rows with the most frequent values
-    filtered_df = df[~df['Path'].isin(most_frequent_values)]
-
-    # Create a DataFrame with the removed rows
-    removed_df = df[df['Path'].isin(most_frequent_values)]
-
-    removed_df.to_csv(f"Default_solution_{disrupt}.csv")
+        # Create a DataFrame with the removed rows
+        removed_df = df[df['Path'].isin(most_frequent_values)]
+        
+        absent = passenger_flights[~passenger_flights['RECLOC'].isin(df['PNR ID'])][['RECLOC']].drop_duplicates(subset='RECLOC')
     
-    absent = passenger_flights[~passenger_flights['RECLOC'].isin(df['PNR ID'])][['RECLOC']].drop_duplicates(subset='RECLOC')
+        absent.rename(columns={'RECLOC': 'PNR ID'}, inplace=True)
+        filtered_df = pd.concat([filtered_df, absent], ignore_index=True)
+        
+        dataframes.append([removed_df, filtered_df])
     
-    absent.rename(columns={'RECLOC': 'PNR ID'}, inplace=True)
-    filtered_df = pd.concat([filtered_df, absent], ignore_index=True)
-    filtered_df.to_csv(f"Exception_list_{disrupt}.csv")
     
-    print(f'{nos} accomodations done')
+    if len(dataframes) > 1:  #If more than one sample with same energies
+        subframes = [dataframes[0]]
+        n = len(subframes[0][0]['PNR ID'].unique())
+        for i in dataframes[1:]:   #Sample based on the no. of passengers accomodates
+            if len(i[0]['PNR ID'].unique()) == n:
+                subframes.append(i)
+            elif len(i[0]['PNR ID'].unique()) > n:
+                subframes = [i]
+                n = len(i[0]['PNR ID'].unique())
+        
+        if len(subframes) > 1:  #If still equal check path score
+            subframes = [max(subframes, key = lambda x: abs_alpha[x[0]['Path']])]
+        
+        dataframes = subframes  #Most aprropriate solution
+    
+    if len(dataframes) != 0: 
+        dataframes[0][0].to_csv(f"Default_solution_{disrupt}.csv")
+        dataframes[0][1].to_csv(f"Exception_list_{disrupt}.csv")
+        
+        print('Accomodations done, check the default and the exception files')
+    else:
+        print("No accomodations available")
+        
     return feasible_sampleset
 
 #FUNCTION TO SOLVE THE KNAPSACK PROBLEM AND GIVE AN OUTPUT AS CSV FILES
@@ -213,4 +272,4 @@ def reaccomodation(PNR, paths, reward, alpha, src, dest, passenger_flights, disr
     
     sampleset = sampler.sample_cqm(cqm, label='Multi-Knapsack')
 
-    return parse_solution(sampleset, passenger_flights, disrupt)
+    return parse_solution(sampleset, passenger_flights, disrupt, alpha, reward, paths)
