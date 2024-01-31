@@ -1,0 +1,30 @@
+Approach 1: Rete Algorithm/Non Rete Algorithm
+	Using Rule Based system for efficient search in solution space
+	Advantage - highly parallelizable, good in both space and time, suitable for large scale AI application
+	Disadvantage - May take too much memory if entire sample space is looked through
+	
+Approach 2: Genetic Algorithm
+	Start randomly and keep improving on a current algorithm by doing natural selection and mutation.
+	Advantage - parallelism
+	Disadvantage - May take too long if selection function is not efficient
+	
+Approach 3: Use A* Search Algorithm or Use Tabu Search Algorithm 
+	f(n) = g(n) + h(n) ----- total = actual + estimate (A*)
+	Tabu Search - Search Local Neighbour hood while minimizing loss by rextricting some paths as we go
+	Advantage - if good estimates are given, always finds optimal paths
+	Disadvantage - it is highly dependent on creation of good estimate function (admissibility check)
+	
+Approach 4: Simulated Annealing & Similar
+	Reduce Solution Space. Then pick arbitrary start and check neighbourhood (Very Large Scale Neighbourhood Search) and keep 
+	optimizing
+	
+	(Simulated Annealing, Artificial Bee Colony Algorithm, Ant Colony Optimization Algorithm, GRASP, FVNS, Genetic, 
+	Hill Climbing)
+	Advantage - robust to noise
+	Disadvantage - might be slow
+	
+	Idea - Use page ranking as a method to initialize searches
+	
+Problem Structure - Time Band Networks
+Another Optimization - Using Column Generation Problem (Split Problem into master and sub problems and solve)(For solving multi
+						variable problems with too many variables in them) 

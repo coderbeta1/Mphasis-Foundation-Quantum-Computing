@@ -1,0 +1,55 @@
+Artificial Bee Colony
+Ant Colony Optimization
+Classical Evolution Algorithm
+Large Neighbourhood Search
+Particle Swarm Optimization
+Quantum Annealing
+Quantum-inspired Artificial Bee Colony
+Quantum Ant Colony Optimization
+Quantum Approximate Optimization Algorithm
+Quantum-inspired Evolutionary Algorithm
+Quantum-inspired Swarm Evolution Algorithm
+Quadratic Unconstrained Binary Optimization - F = [Matrix]*[yes/no string]
+
+Ferreira [16] implemented two different algorithms, Particle Swarm Optimization (PSO) and Ant
+Colony Optimization (ACO), to solve the ARP. These algorithms were implemented in a MultiAgent System called MASDIMA
+ (Multi-Agent System for Disruption Management) [7]. The study’s goal was to compare the algorithms’ performance against 
+ two other algorithms, Simulated Annealing (SA) and Hill Climbing (HC), which were already implemented in MASDIMA and
+successfully solved the ARP.
+
+[16] António José Ferreira. Evolutionary computation methods applied to operational control
+centers. Master’s thesis, Faculdade de Engenharia da Universidade do Porto, 2015
+[7] António J. M. Castro, Ana Rocha, and Eugénio Oliveira. A new approach for disruption
+management in airline operations control. AI Matters, 1:15–16, 08 2014.
+
+Solving any optimization problem requires two steps - one, formulating the problem, and two, 
+obtaining the optimal solution to the formulation. The first step constitutes understanding the 
+problem and formulating it in mathematical terms. This mathematical formulation can be done 
+in several ways, such as Linear Programming (LP), Mixed Integer Linear Programming (MILP), 
+non-linear and quadratic. Based on the convenience of formulating the problem and the availability 
+of algorithms, techniques and tools to solve the model, a method of formulation is chosen. 
+Once the problem is formulated, the second step in the optimization problem is obtaining the 
+solution with the most optimal cost.
+
+Constrained Quadratic Models (CQM) or 
+Binary Quadratic Models (BQM) or
+QUBO
+
+
+algorithm Clarke-GPL
+begin
+	Initialize all label values at each node
+	Set "dominance label" at each node to zero cost and zero time
+	Open source node
+	while the network contains "opened" nodes do
+	begin
+		Scan all arcs from all opened nodes in the network
+		Establish candidate labels based on dominance test (cost and time parameters)
+		If cost or time is less than dominant label, store label; else discard new label
+		Open nodes whose labels satisfy dominance test
+		Update multiple attribute label linked list at each open/unscanned node
+		Close scanned nodes at end of iteration
+	end
+	Select shortest path from source to sink in the network that satisfies schedule
+	constraints
+end

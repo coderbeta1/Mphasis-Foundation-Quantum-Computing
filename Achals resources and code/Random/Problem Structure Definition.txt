@@ -1,0 +1,74 @@
+Overview:
+	Airlines routinely change their flight schedules for various reasons like seasonal demands, to
+	pick new routes, time changes needed based on daylight savings, changes to flight numbers,
+	operating frequency, timings, etc. Many passengers will get impacted due these schedule
+	changes and they need to re-accommodate to the alternate flights. Airlines need a solution to
+	analyze the impact to the passengers with their planned schedule changes and automatically
+	identify the suitable alternate flights for the impacted passengers.
+	
+	❖ Identify impacted flights and passengers with the proposed schedule changes
+	❖ Based the impact at flight and passenger level, identify the suitable alternate flight
+	(Optimization)
+	❖ Rank alternate flight solutions based on various factors like time to reach destination,
+	impact to the purchased ancillary services, etc. (Calculation)
+	❖ Rank passengers for the re-accommodation priority on various factors like passenger
+	type (unaccompanied minor, on duty employee, loyalty customer levels, paid class of
+	service, etc. ) (Calculation)
+	❖ Flexibility to alter the business rules for flight ranking and passenger ranking and
+	reproduce the solution.
+	❖ Option for the airline to pick the right solution from the multiple reports.
+	❖ Generate the flight and passenger re-accommodation solution files and rank each
+	solution.
+	❖ Ground rules to set up the expiration date and time.
+
+
+Input:
+	1. Business Rules + their importance (compulsory vs good to have) - (IATA Standard Data Models)
+	2. Industry data models can be used for the schedules, inventory, check-in and One order (PNR, ticket)
+	3. Impacted PNRs
+	4. Flight Network for the current year
+
+	
+Output:
+	1. Default solution - Flight level for re-accommodation where majority of the passengers will be re-accommodated.
+	2. Exception list – It will give the re-accommodation at PNR level, which are not fall under the majority category.
+	3. Evaluation Metrics (Time/Space Complexity, Max/Min/Average/Median Delays, Costs Incurred (for passengers/Airlines))
+	4. Option of generating mail allowing passenger to choose outcome (GOOD TO HAVE/VALUE ADDITION)
+	5. Proper Representation of output files with good GUI (GOOD TO HAVE/VALUE ADDITION)
+
+Aims:
+	# Identify optimal/best alternate flight solutions for all the impacted passengers (impacted due to planned schedule 
+		change) based on the provided rule sets
+	# Solution Ranking Methods:
+		1. Delay Time (Average, Total, Weighted Average, Median)
+		2. Total Cost Incurred to Airlines vs Total Cost advantage for passenger
+		3. Direct Flight vs Connecting vs Complete Cancellation
+	# Good to have:
+		1. Parameters are easy to toggle on/off or change weights(Flexibility of business rules)
+		2. Easy to add new parameters (Flexibility of business rules)
+		3. Auto Generate Mails for multiple options
+		4. Explanation of why current chosen solution is good over others
+		5. A solution that learns from previous answers so that calculation speed can be continuously reduced
+		6. Easy visualization of current progress and final output file. (graphs and other methods used)
+		7. Business Proposal for the model and its scalabilty
+		8. Is it possible to grow the model to live time updates (instead of scheduled updates)
+		9. Can multiple airport flight cancellations be handled by this one model to avoid clashes
+
+Assumptions:
+	1. We will not allow more than k connecting flights (k < 4)
+	2. Min Delay between flights is x min (in case of connecting flights)
+	3. Min time of a flight is y with error of +-z minutes
+	4. We will not allow the passenger to travel more than x km away from the target location (eg for Delhi -> Mumbai,
+		Delhi -> London -> Mumbai is rejected for going too far away)
+	5. We will not allow more than $z cost to be incurred on a passenger
+	6. Delay of more than A hrs is not allowed
+	
+To Do:
+	1. How should the database be structured ?
+	2. Define what parameters we will use
+	3. Reduce Amount of Flights by use of business rules or other parameters
+	4. Path Finding Approach
+	5. Defining an Optimization Function
+	6. Model Testing and Outliers Analysis
+	7. Data Vizualization
+	8. ..................
